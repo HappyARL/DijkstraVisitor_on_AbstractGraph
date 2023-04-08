@@ -29,7 +29,6 @@ template <typename Vertex, typename Weight, typename Edge = DefaultEdge<Vertex, 
 
 1. Все требования к графу, кроме требования про наследника в виде матрицы смежности. Хватит на основе списка смежности.
 ```c++
-std::unordered_map<Vertex, std::vector<std::pair<Vertex, Weight> > >
-      connections;
+std::unordered_map<Vertex, std::vector<std::pair<Vertex, Weight> > > connections;
 ```
 2. Ребро должно быть взвешенным, то есть хранить в себе вес. Его тип считаем тоже шаблоном, чтобы уметь обрабатывать как целые, так и вещественные числа.
