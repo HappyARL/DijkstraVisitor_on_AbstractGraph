@@ -48,23 +48,24 @@ template <typename Vertex, typename Weight,
           typename Edge = DefaultEdge<Vertex, Weight> >
 class Graph : public AbstractGraph<Vertex, Weight, Edge> {
  public:
-  std::unordered_map<Vertex, std::vector<std::pair<Vertex, Weight> > >
-      list_neighbors;
-
   Graph(size_t vertices_num, const std::vector<Edge>& edges)
       : AbstractGraph<Vertex, Weight, Edge>(vertices_num, edges.size()) {
     for (const auto& edge : edges) {
-      list_neighbors[edge.Source()].push_back(
+      list_neighbors_[edge.Source()].push_back(
           std::make_pair(edge.Destination(), edge.WeightValue()));
-      list_neighbors[edge.Destination()].push_back(
+      list_neighbors_[edge.Destination()].push_back(
           std::make_pair(edge.Source(), edge.WeightValue()));
     }
   }
 
   std::vector<std::pair<Vertex, Weight> > GetNeighbours(
       const Vertex& vertex) final {
-    return list_neighbors[vertex];
+    return list_neighbors_[vertex];
   }
+
+ private:
+  std::unordered_map<Vertex, std::vector<std::pair<Vertex, Weight> > >
+      list_neighbors_;
 };
 
 // реализация на матрице смежности
@@ -72,17 +73,15 @@ template <typename Vertex, typename Weight,
           typename Edge = DefaultEdge<Vertex, Weight> >
 class GraphMatrix : public AbstractGraph<Vertex, Weight, Edge> {
  public:
-  std::vector<std::vector<Weight> > matrix_neighbour;
-
   GraphMatrix(size_t vertices_num, const std::vector<Edge>& edges)
       : AbstractGraph<Vertex, Weight, Edge>(vertices_num, edges.size()) {
     for (size_t i = 0; i < vertices_num; ++i) {
       std::vector<Weight> tmp(vertices_num, 0);
-      matrix_neighbour.push_back(tmp);
+      matrix_neighbour_.push_back(tmp);
     }
     for (const auto& edge : edges) {
-      matrix_neighbour[edge.Source()][edge.Destination()] = edge.WeightValue();
-      matrix_neighbour[edge.Destination()][edge.Source()] = edge.WeightValue();
+      matrix_neighbour_[edge.Source()][edge.Destination()] = edge.WeightValue();
+      matrix_neighbour_[edge.Destination()][edge.Source()] = edge.WeightValue();
     }
   }
 
@@ -90,8 +89,8 @@ class GraphMatrix : public AbstractGraph<Vertex, Weight, Edge> {
       const Vertex& vertex) final {
     std::vector<std::pair<Vertex, Weight> > result;
     for (size_t i = 0; i < this->GetVerticesNumber(); ++i) {
-      if (matrix_neighbour[vertex][i] > 0) {
-        result.push_back(std::make_pair(i, matrix_neighbour[vertex][i]));
+      if (matrix_neighbour_[vertex][i] > 0) {
+        result.push_back(std::make_pair(i, matrix_neighbour_[vertex][i]));
       }
     }
     return result;
@@ -100,12 +99,15 @@ class GraphMatrix : public AbstractGraph<Vertex, Weight, Edge> {
     void Print() {
       for (size_t i = 0; i < this->GetVerticesNumber(); ++i) {
         for (size_t j = 0; j < this->GetVerticesNumber(); ++j) {
-          std::cout << matrix_neighbour[i][j] << " ";
+          std::cout << matrix_neighbour_[i][j] << " ";
         }
         std::cout << '\n';
       }
     }
   */
+
+ private:
+  std::vector<std::vector<Weight> > matrix_neighbour_;
 };
 
 // Алгоритм Дейкстры
@@ -118,8 +120,8 @@ class DijkstraVisitor {
 
   std::vector<Vertex> Dijkstra() {
     std::vector<Vertex> answer;
-    answer.resize(graph_.list_neighbors.size());
-    for (size_t i = 0; i < graph_.list_neighbors.size(); ++i) {
+    answer.resize(graph_.GetVerticesNumber());
+    for (size_t i = 0; i < graph_.GetVerticesNumber(); ++i) {
       answer[i] = kMax;
     }
     answer[start_point_] = 0;
@@ -128,16 +130,16 @@ class DijkstraVisitor {
     while (!distance.empty()) {
       int index = distance.begin()->second;
       distance.erase(distance.begin());
-      for (size_t j = 0; j < graph_.list_neighbors[index].size(); ++j) {
-        int sum = answer[index] + graph_.list_neighbors[index].at(j).second;
-        if (sum < answer[graph_.list_neighbors[index].at(j).first]) {
+      for (size_t j = 0; j < graph_.GetNeighbours(index).size(); ++j) {
+        int sum = answer[index] + graph_.GetNeighbours(index).at(j).second;
+        if (sum < answer[graph_.GetNeighbours(index).at(j).first]) {
           distance.erase(
-              std::make_pair(answer[graph_.list_neighbors[index].at(j).first],
-                             graph_.list_neighbors[index].at(j).first));
-          answer[graph_.list_neighbors[index].at(j).first] = sum;
+              std::make_pair(answer[graph_.GetNeighbours(index).at(j).first],
+                             graph_.GetNeighbours(index).at(j).first));
+          answer[graph_.GetNeighbours(index).at(j).first] = sum;
           distance.insert(
-              std::make_pair(answer[graph_.list_neighbors[index].at(j).first],
-                             graph_.list_neighbors[index].at(j).first));
+              std::make_pair(answer[graph_.GetNeighbours(index).at(j).first],
+                             graph_.GetNeighbours(index).at(j).first));
         }
       }
     }
